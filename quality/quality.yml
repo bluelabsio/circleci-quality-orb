@@ -1,0 +1,83 @@
+version: 2.1
+
+description: Provides jobs and commands to aid in running the quality gem
+
+executors:
+  quality_executor:
+    parameters:
+      image_version:
+        type: string
+        default: 'shellcheck-32'
+    working_directory: /usr/app
+    docker:
+      - image: apiology/quality:<<parameters.image_version>>
+
+commands:
+  check-quality:
+    description: "Runs the quality check"
+    parameters:
+      custom_rakefile:
+        description: "Path to a custom Rakefile"
+        type: string
+        default: ""
+      enforce_unchanged:
+        description: "If true, command will fail if any metrics were changed by quality run"
+        type: boolean
+        default: true
+    steps:
+      - when:
+          condition: <<parameters.custom_rakefile>>
+          steps:
+            - run:
+                name: Install custom Rakefile
+                command: cp <<parameters.custom_rakefile>> /usr/quality/Rakefile
+
+      - run:
+          name: Quality
+          command: /entrypoint.sh quality
+
+      - when:
+          condition: <<parameters.enforce_unchanged>>
+          steps:
+            - run:
+                name: Check that metrics are up-to-date
+                command: |
+                    echo "Looking for any new metrics..."
+                    git status --porcelain metrics
+
+                    echo "Looking for un-ratcheted quality metrics..."
+                    test -z "$(git status --porcelain metrics | grep '^ M')"
+
+                    echo "Looking for un-checked-in quality metrics..."
+                    test -z "$(git status --porcelain metrics | grep '^??')"
+
+jobs:
+  check-quality-job:
+    parameters:
+      executor:
+        type: executor
+        default: quality_executor
+      custom_rakefile:
+        description: "Path to a custom Rakefile"
+        type: string
+        default: ""
+    executor: <<parameters.executor>>
+    steps:
+      - checkout
+      - check-quality:
+          custom_rakefile: <<parameters.custom_rakefile>>
+
+examples:
+  check-quality-job:
+    description: Runs a check-quality job with custom Rakefile
+    usage:
+      version: 2.1
+      orbs:
+        quality: bluelabs/quality@dev
+      workflows:
+        version: 2
+        build:
+          jobs:
+            - quality/check-quality-job:
+                custom_rakefile: Rakefile.quality
+
