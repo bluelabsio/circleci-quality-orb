@@ -5,12 +5,12 @@ description: Provides jobs and commands to aid in running the quality gem
 executors:
   quality_executor:
     parameters:
-      image_version:
+      image_tag:
         type: string
         default: 'shellcheck-32'
     working_directory: /usr/app
     docker:
-      - image: apiology/quality:<<parameters.image_version>>
+      - image: apiology/quality:<<parameters.image_tag>>
 
 commands:
   check-quality:
@@ -54,14 +54,17 @@ commands:
 jobs:
   check-quality-job:
     parameters:
-      executor:
-        type: executor
-        default: quality_executor
+      image_tag:
+        description: "Quality image version"
+        type: string
+        default: "shellcheck-32"
       custom_rakefile:
         description: "Path to a custom Rakefile"
         type: string
         default: ""
-    executor: <<parameters.executor>>
+    executor:
+      name: quality_executor
+      image_tag: <<parameters.image_tag>>
     steps:
       - checkout
       - check-quality:
@@ -73,7 +76,7 @@ examples:
     usage:
       version: 2.1
       orbs:
-        quality: bluelabs/quality@dev
+        quality: bluelabs/quality@0.0.1
       workflows:
         version: 2
         build:
