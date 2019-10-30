@@ -3,6 +3,6 @@
 ## Validation and publishing
 
 ```sh
-circleci orb validate quality/quality.yml
-circleci orb publish quality/quality.yml bluelabs/quality@dev:latest
+circleci orb validate src/quality.yml
+circleci orb publish src/quality.yml bluelabs/quality@dev:latest
 ```
