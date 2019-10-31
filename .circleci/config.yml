@@ -1,0 +1,11 @@
+version: 2.1
+orbs:
+  orb-tools: circleci/orb-tools@8.27.4
+
+workflows:
+  btd:
+    jobs:
+      - orb-tools/publish:
+          orb-path: src/orb.yml
+          orb-ref: bluelabs/quality@dev:${CIRCLE_BRANCH}
+          validate: true
